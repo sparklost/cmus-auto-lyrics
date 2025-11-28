@@ -59,7 +59,7 @@ Colors are provided as integer and they are [8bit ANSI color codes](https://gist
 `sudo cp dist/cmus-rpc-py /usr/local/sbin/`
 
 ## Building
-1. Clone this repository: `git clone https://github.com/mzivic7/cmus-auto-lyrics`
+1. Clone this repository: `git clone https://github.com/sparklost/cmus-auto-lyrics`
 2. Install [pipenv](https://docs.pipenv.org/install/)
 3. `cd cmus-auto-lyrics`
 4. Install requirements: `pipenv install`
@@ -75,7 +75,7 @@ Launching with maximized gnome terminal (can be added as launcher):
 ```
 gnome-terminal --window --maximize -- /bin/sh -c "tmux new-session -s cmus -d -x '$(tput cols)' -y '$(tput lines)' $'cmus'; tmux split -h -l40 $'cmus-auto-lyrics -a'; tmux select-pane -t 0; tmux attach -t cmus"
 ```
-Launching with [cmus-rpc-py](https://github.com/mzivic7/cmus-rpc-py):
+Launching with [cmus-rpc-py](https://github.com/sparklost/cmus-rpc-py):
 ```
 bash -c "tmux new-session -s cmus -d -x '$(tput cols)' -y '$(tput lines)' $'cmus-rpc-py -s & cmus'; tmux split -h -l40 $'cmus-auto-lyrics -a'; tmux select-pane -t 0; tmux attach -t cmus"
 ```
