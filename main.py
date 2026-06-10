@@ -116,14 +116,14 @@ class UI:
             if self.position > 0:
                 self.position -= 1
                 self.draw()
-                return True
-        elif input_key == curses.KEY_DOWN:
+            return True
+        if input_key == curses.KEY_DOWN:
             h, _ = self.screen.getmaxyx()
             if self.position < len(self.lines) - h / 2:
                 self.position += 1
                 self.draw()
-                return True
-        elif input_key == curses.KEY_RESIZE:
+            return True
+        if input_key == curses.KEY_RESIZE:
             self.draw()
             return False
         return False
@@ -309,8 +309,9 @@ def main(screen, args):
         key_pressed = ui.wait_input()
         if key_pressed:
             disable_auto_scroll = True
-        timer += 1
-        time.sleep(delay)
+        else:
+            timer += 1
+            time.sleep(delay)
 
 
 def sigint_handler(signum, frame):   # noqa
@@ -383,7 +384,7 @@ def argparser():
         "-v",
         "--version",
         action="version",
-        version="%(prog)s 0.2.2",
+        version="%(prog)s 0.3.0",
     )
     return parser.parse_args()
 

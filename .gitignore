@@ -1,20 +1,20 @@
+# Misc
+THIRD_PARTY_LICENSES.txt
+.debris
+.megaignore
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[codz]
+*$py.class
+
 # Cython
 *.pyc
 
 # C extensions
 *.so
 
-# Cython debug symbols
-cython_debug/
-
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
-
 # Distribution / packaging
-build.sh
-build_dep.sh
 .Python
 build/
 develop-eggs/
@@ -24,6 +24,7 @@ eggs/
 .eggs/
 lib/
 lib64/
+parts/
 sdist/
 var/
 wheels/
@@ -51,7 +52,7 @@ htmlcov/
 nosetests.xml
 coverage.xml
 *.cover
-*.py,cover
+*.py.cover
 .hypothesis/
 .pytest_cache/
 cover/
@@ -87,18 +88,12 @@ target/
 profile_default/
 ipython_config.py
 
-# pyenv
-.python-version
-
-# pipenv
-Pipfile.lock
-
-# poetry
-# poetry.lock
-
 # pdm
-# pdm.lock
-.pdm.toml
+.pdm-python
+.pdm-build/
+
+# pixi
+.pixi
 
 # PEP 582
 __pypackages__/
@@ -112,6 +107,7 @@ celerybeat.pid
 
 # Environments
 .env
+.envrc
 .venv
 env/
 venv/
@@ -140,3 +136,22 @@ dmypy.json
 # pytype static type analyzer
 .pytype/
 
+# Cython debug symbols
+cython_debug/
+
+# PyCharm
+.idea/
+
+# Visual Studio Code
+.vscode/
+
+# Ruff stuff:
+.ruff_cache/
+
+# PyPI configuration file
+.pypirc
+
+# Marimo
+marimo/_static/
+marimo/_lsp/
+__marimo__/
