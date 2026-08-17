@@ -7,7 +7,7 @@ import subprocess
 import sys
 import time
 
-import music_tag
+import taglib
 
 import get_lyrics_azlyrics
 import get_lyrics_genius
@@ -150,17 +150,21 @@ def get_lyrics(song_path, token, clear_headers=False, offline=False, artist=None
     by reading artist and title from tags,
     alternatively guessing them from song file path and name.
     """
-    tags = music_tag.load_file(song_path)
-    if len(str(tags["lyrics"])) > 12:
-        lyrics = str(tags["lyrics"])
-    else:
-        lyrics = None
-    if not artist:
-        if tags["artist"].first:
-            artist = str(tags["artist"].first)
-    if not title:
-        if tags["title"].first:
-            title = str(tags["title"].first)
+    with taglib.File(song_path) as song:
+        lyrics_list = song.tags.get("LYRICS", [])
+        lyrics_tag = lyrics_list[0] if lyrics_list else ""
+        if len(lyrics_tag) > 12:
+            lyrics = lyrics_tag
+        else:
+            lyrics = None
+        if not artist:
+            artist_list = song.tags.get("ARTIST", [])
+            if artist_list and artist_list[0]:
+                artist = artist_list[0]
+        if not title:
+            title_list = song.tags.get("TITLE", [])
+            if title_list and title_list[0]:
+                title = title_list[0]
     if not artist:
         artist, _ = title_from_path(song_path)
     if not title:
@@ -180,17 +184,16 @@ def split_lyrics(lyrics):
     timestamped = False
     timestamps = []
     lyrics = lyrics.split("\n")
-    for num, line in enumerate(lyrics):
+    clean_lyrics = []
+    for line in lyrics:
         timestamp = re.match(MATCH_TIMESTAMP, line)
         if timestamp:
             mins, secs, mils = map(int, timestamp.groups())
-            timestamps.append(mins * 60 + secs + (mils > 50))
+            timestamps.append(mins * 60 + secs + (mils > 50) - 1)
             timestamped = True
-            lyrics[num] = line[timestamp.end():]
-        else:
-            timestamps.append(None)
+            clean_lyrics.append(line[timestamp.end():])
     if timestamped:
-        return lyrics, timestamps
+        return clean_lyrics, timestamps
     return lyrics, None
 
 
@@ -198,15 +201,13 @@ def find_timestamp(timestamps, position):
     """Fidnd timestamp index based on current song position"""
     for num, timestamp in enumerate(timestamps):
         if timestamp >= position:
-            return num
+            return num - 1
     return 0
 
 
 def cmus_status():
     """Get song path, duration and position from cmus-remote"""
-    proc = subprocess.Popen(["cmus-remote", "-Q"],
-                            stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE)
+    proc = subprocess.Popen(["cmus-remote", "-Q"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     output, error = proc.communicate()
     if error:
         if error.decode() == "cmus-remote: cmus is not running\n":
@@ -230,14 +231,18 @@ def cmus_status():
 def fill_tags(song_path, lyrics, artist, title):
     """Save lyrics, artist, and title tags, if lyrics tag is missing."""
     if lyrics not in NOT_LYRICS:
-        tags = music_tag.load_file(song_path)
-        if len(str(tags["lyrics"])) < 16:
-            tags["lyrics"] = lyrics
-            if not tags["artist"].first:
-                tags["artist"] = artist
-            if not tags["title"].first:
-                tags["title"] = title
-            tags.save()
+        with taglib.File(song_path) as song:
+            lyrics_list = song.tags.get("LYRICS", [])
+            lyrics_tag = lyrics_list[0] if lyrics_list else ""
+            if len(lyrics_tag) < 16:
+                song.tags["LYRICS"] = [lyrics]
+                artist_list = song.tags.get("ARTIST", [])
+                if not artist_list or not artist_list[0]:
+                    song.tags["ARTIST"] = [artist]
+                title_list = song.tags.get("TITLE", [])
+                if not title_list or not title_list[0]:
+                    song.tags["TITLE"] = [title]
+                song.save()
 
 
 def main(screen, args):
@@ -274,10 +279,11 @@ def main(screen, args):
 
     song_path_old = song_path
     position_old = position
-
+    timestamp_old = None
     delay = 0.05
-    check_status_s = 1
-    check_status = int(check_status_s / delay)
+    check_status_timesync = int(1 / delay)
+    check_status_timestamps = int(0.5 / delay)
+    check_status = check_status_timestamps if timestamps else check_status_timesync
     timer = 0
     disable_auto_scroll = False
     run = True
@@ -296,13 +302,17 @@ def main(screen, args):
             disable_auto_scroll = False
             if save_tags:
                 fill_tags(song_path, lyrics_str, artist, title)
-        if duration and auto_scroll and not disable_auto_scroll:
-            if position != position_old:
+            check_status = check_status_timestamps if timestamps else check_status_timesync
+        if duration:
+            if timestamps:
+                timestamp = find_timestamp(timestamps, position)
+                if timestamp != timestamp_old:
+                    ui.scroll_by_index(timestamp)
+                    timestamp_old = timestamp
+                    ui.draw()
+            elif auto_scroll and not disable_auto_scroll and position != position_old:
                 position_old = position
-                if timestamps:
-                    ui.scroll_by_index(find_timestamp(timestamps, position))
-                else:
-                    ui.scroll_by_duration(duration, position)
+                ui.scroll_by_duration(duration, position)
                 ui.draw()
         if duration == -1:
             sys.exit()
@@ -384,7 +394,7 @@ def argparser():
         "-v",
         "--version",
         action="version",
-        version="%(prog)s 0.3.0",
+        version="%(prog)s 0.4.0",
     )
     return parser.parse_args()
 
